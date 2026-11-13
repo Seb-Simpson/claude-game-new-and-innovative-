@@ -6,7 +6,7 @@ Single file `index.html`, organised in sections:
 |---|---|
 | Core constants & utils | Arena size (1280×720 logical), seeded RNG (`mulberry32`), math helpers |
 | Save data | `localStorage` with try/catch; game works without storage |
-| Audio (`Snd`) | Synthesized SFX + 16th-note lookahead music scheduler with intensity levels |
+| Audio (`Snd`) | Synthesized SFX, plus `createMusic()`: a synthesized band (drums, sidechained bass, pads, delay plucks, lead, keys) through a tape chain (saturation, wobble, reverb, pitch bend). Each sector has a song in its own key; a loop is exactly 16 bars and the song follows the game's loop clock; living echoes add parts; rewinds tape-stop. `LOOPBACK.renderMusic()` renders offline for tests |
 | Input | Keyboard, mouse, gamepad, touch twin-sticks (`Touch`, `readTouch`, aim assist); `G.virtual` overrides input for tests |
 | Game data | `CHARS`, `ETYPES`, `STAGES`, `ANCHORS`, `UPGRADES`, `PERKS` (tuning lives here) |
 | Loop flow | `startRun` → `startStage` → `beginLoop` → `endLoop` → `finishRewind` / `playerDeath` / `anchorKilled` → `finishStage` |

@@ -1,6 +1,6 @@
 # QA
 
-## Automated (`npm test`): 73 checks
+## Automated (`npm test`): 76 checks (includes offline music renders: no clipping/NaN, loudness −15 to −20 dB RMS)
 Startup, character select, movement, wall/arena collision, firing, loop to rewind to echo creation,
 **echo determinism** (position error < 0.001), echo firing, anchor HP persistence, retry flow (charge spent,
 state restored), pause/resume, sector clear to upgrade to next sector, boss 3 phases + lasers, game over +

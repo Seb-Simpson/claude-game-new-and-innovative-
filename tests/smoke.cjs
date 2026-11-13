@@ -206,6 +206,17 @@ function check(name, cond, detail = '') {
   });
   check('same seed gives identical spawn schedule', sameLayers);
 
+  // ---- music renders cleanly for every sector (offline, no speakers needed)
+  const mus = await ev(async () => {
+    const out = [];
+    out.push(['menu', await LOOPBACK.renderMusic({ kind: 'menu', seconds: 6 })]);
+    for (let i = 0; i < 5; i++) for (const L of [0, 5]) out.push([`s${i + 1} L${L}`, await LOOPBACK.renderMusic({ sector: i, layers: L, seconds: 5, phase: i === 4 ? 2 : 0 })]);
+    return out.map(([k, r]) => ({ k, peak: +r.peak.toFixed(3), rms: +r.rmsDb.toFixed(1), nan: r.nan }));
+  });
+  check('music: no NaNs and no clipping in any track', mus.every(m => m.nan === 0 && m.peak < 0.98), JSON.stringify(mus));
+  check('music: every track sits in a sensible loudness range', mus.every(m => m.rms > -26 && m.rms < -11), JSON.stringify(mus));
+  results.push('  music ' + mus.map(m => `${m.k}:${m.rms}dB`).join(' '));
+
   // ---- other characters' abilities run without errors
   for (const id of ['bulwark', 'flux']) {
     const ok = await ev(id => {
@@ -259,6 +270,7 @@ function check(name, cond, detail = '') {
   await page2.click('#char-cards .card');
   check('select: clicking a runner starts a real run', await page2.evaluate(() => !LOOPBACK.G.demo && LOOPBACK.G.mode === 'intro'));
   await page2.waitForTimeout(3200);
+  check('music: sector song plays during a run', await page2.evaluate(() => { const m = LOOPBACK.Snd.music.state; return m.mode === 'song' && m.song === 'The Yard' && m.layers === 0; }), JSON.stringify(await page2.evaluate(() => LOOPBACK.Snd.music.state)));
   check('hud: visible during a run', await page2.evaluate(() => !document.getElementById('hud').classList.contains('hidden')));
   check('hud: shows loop and timecode', await page2.evaluate(() => /loop 1/.test(document.getElementById('h-loop').textContent) && /^00:\d\d\.\d/.test(document.getElementById('h-time').textContent)));
   await page2.keyboard.press('Escape');
