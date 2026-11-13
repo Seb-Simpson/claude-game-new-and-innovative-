@@ -70,6 +70,7 @@ function check(name, cond, detail = '') {
   await shot('03-loop2-start');
   check('rewind creates an echo', await ev(() => LOOPBACK.G.ghosts.length === 1 && LOOPBACK.G.mode === 'play'));
   check('loop counter advanced', await ev(() => LOOPBACK.G.st.loop === 1));
+  check('hud: recording strip shows a lane per echo plus now', await ev(() => { LOOPBACK.G.demo = false; LOOPBACK.updateHUD(); return document.querySelectorAll('#h-lanes .ln').length === 2 && document.querySelectorAll('#h-lanes .ln:first-child i').length > 0; }));
   check('anchor damage persists across loops', await ev(h => LOOPBACK.G.st.anchor.hp === h, hpAfterLoop1));
 
   // ---- determinism: echo replays the recording exactly
@@ -243,6 +244,41 @@ function check(name, cond, detail = '') {
   const page2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page2.on('pageerror', e => errors.push('page2: ' + e));
   await page2.goto(URL);
+  // ---- Tape UI: live demo behind the title, embedded fonts, DOM HUD
+  await page2.evaluate(() => LOOPBACK.resetSave());
+  await page2.waitForTimeout(4500);
+  const demo = await page2.evaluate(() => ({ demo: LOOPBACK.G.demo, tick: LOOPBACK.G.st && LOOPBACK.G.st.tick, mode: LOOPBACK.G.mode, hud: document.getElementById('hud').classList.contains('hidden'), runs: LOOPBACK.save.runs }));
+  check('title: live demo plays behind the menu', demo.demo === true && demo.mode === 'play' && demo.tick > 30, JSON.stringify(demo));
+  check('title: HUD hidden during demo', demo.hud === true, JSON.stringify(demo));
+  check('title: demo does not touch the save', demo.runs === 0, JSON.stringify(demo));
+  check('fonts: embedded faces load', await page2.evaluate(async () => { await document.fonts.ready; return document.fonts.check('40px Anton') && document.fonts.check('600 20px "Barlow Condensed"') && document.fonts.check('700 20px "IBM Plex Mono"'); }));
+  if (SHOTS) await page2.screenshot({ path: path.join(shotDir, '00-title-demo.png') });
+  await page2.click('button[data-act=play]');
+  await page2.waitForTimeout(150);
+  if (SHOTS) await page2.screenshot({ path: path.join(shotDir, '02b-select.png') });
+  await page2.click('#char-cards .card');
+  check('select: clicking a runner starts a real run', await page2.evaluate(() => !LOOPBACK.G.demo && LOOPBACK.G.mode === 'intro'));
+  await page2.waitForTimeout(3200);
+  check('hud: visible during a run', await page2.evaluate(() => !document.getElementById('hud').classList.contains('hidden')));
+  check('hud: shows loop and timecode', await page2.evaluate(() => /loop 1/.test(document.getElementById('h-loop').textContent) && /^00:\d\d\.\d/.test(document.getElementById('h-time').textContent)));
+  await page2.keyboard.press('Escape');
+  await page2.waitForTimeout(100);
+  check('pause: Escape opens pause with timecode', await page2.isVisible('#scr-pause') && await page2.evaluate(() => /loop 1/.test(document.getElementById('pause-code').textContent)));
+  if (SHOTS) await page2.screenshot({ path: path.join(shotDir, '09-pause.png') });
+  await page2.click('button[data-act=quit]');
+  await page2.waitForTimeout(150);
+  check('over: abandoning shows run over', await page2.isVisible('#scr-over'));
+  if (SHOTS) await page2.screenshot({ path: path.join(shotDir, '10-over.png') });
+  await page2.click('button[data-act=title]');
+  await page2.waitForTimeout(300);
+  check('over: main menu returns to the live title', await page2.isVisible('#scr-title') && await page2.evaluate(() => LOOPBACK.G.demo));
+  for (const [act, name] of [['lab', '11-lab'], ['howto', '12-howto'], ['settings', '13-settings']]) {
+    await page2.click(`#scr-title button[data-act=${act}]`); await page2.waitForTimeout(120);
+    if (SHOTS) await page2.screenshot({ path: path.join(shotDir, name + '.png') });
+    await page2.keyboard.press('Escape'); await page2.waitForTimeout(80);
+  }
+  check('menus: Escape returns to title from sub-screens', await page2.isVisible('#scr-title'));
+  await page2.evaluate(() => LOOPBACK.toTitle());
   await page2.evaluate(() => LOOPBACK.start('volt', { seed: 5 }));
   await page2.waitForTimeout(3500);
   check('real-time loop advances simulation', await page2.evaluate(() => LOOPBACK.G.mode === 'play' && LOOPBACK.G.st.tick > 20));
@@ -264,7 +300,7 @@ function check(name, cond, detail = '') {
   if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm1-title.png') });
   await mp.tap('button[data-act=play]');
   await mp.waitForTimeout(100);
-  check('mobile: runner cards fit/scroll inside screen', await fits('#scr-select h2'));
+  check('mobile: runner list fits inside screen', await fits('#char-cards .card'));
   if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm2-select.png') });
   await mp.tap('#char-cards .card');
   check('mobile: tapping a runner starts a run', await mp.evaluate(() => LOOPBACK.G.mode === 'intro'));
@@ -285,13 +321,12 @@ function check(name, cond, detail = '') {
   check('mobile: dragging right stick aims', Math.abs(aimUp + Math.PI / 2) < 0.2, `aim=${aimUp}`);
   if (SHOTS) { await mp.evaluate(() => { const G = LOOPBACK.G; G.st.anchor.active = true; for (let i = 0; i < 500; i++) { G.player.inv = 5; LOOPBACK.step(1); } LOOPBACK.render(); }); await mp.screenshot({ path: path.join(shotDir, 'm3-gameplay.png') }); }
   await pup(1, 220, 280); await pup(2, 600, 120);
-  const abBtn = await mp.evaluate(() => LOOPBACK.Touch.ab);
-  await mp.evaluate(() => { LOOPBACK.G.player.acd = 0; });
-  await pdown(3, abBtn.x, abBtn.y); await pup(3, abBtn.x, abBtn.y);
+  await mp.evaluate(() => { LOOPBACK.G.player.acd = 0; LOOPBACK.updateHUD(); });
+  await mp.tap('#t-ab');
   check('mobile: ability button triggers ability', await mp.evaluate(() => { LOOPBACK.step(2); return LOOPBACK.G.player.acd > 0; }));
   check('mobile: sticks released after lift', await mp.evaluate(() => !LOOPBACK.Touch.move && !LOOPBACK.Touch.aim));
-  const pz = await mp.evaluate(() => { LOOPBACK.render(); return LOOPBACK.Touch.pz; });
-  await pdown(4, pz.x, pz.y);
+  await mp.evaluate(() => LOOPBACK.updateHUD());
+  await mp.tap('#t-pause');
   check('mobile: pause button pauses', await mp.isVisible('#scr-pause'));
   if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm4-pause.png') });
   await mp.tap('button[data-act=resume]');

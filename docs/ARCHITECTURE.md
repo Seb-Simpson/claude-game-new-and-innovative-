@@ -11,8 +11,11 @@ Single file `index.html`, organised in sections:
 | Game data | `CHARS`, `ETYPES`, `STAGES`, `ANCHORS`, `UPGRADES`, `PERKS` (tuning lives here) |
 | Loop flow | `startRun` → `startStage` → `beginLoop` → `endLoop` → `finishRewind` / `playerDeath` / `anchorKilled` → `finishStage` |
 | Simulation | Fixed 60 Hz `tick()`; `simTick()` runs player, echoes, anchor, enemies, bullets, pickups |
-| Rendering | Canvas 2D with cached radial-glow sprites and additive blending. World in 1280×720 letterboxed space; HUD and touch controls in screen space (`view.hud` scale, safe-area insets). Adaptive DPR |
-| UI screens | DOM overlays (title, select, lab, how-to, settings, pause, upgrade, game over) |
+| Rendering | Canvas 2D with cached radial-glow sprites and additive blending. World in 1280×720 letterboxed space; touch controls are DOM elements. Adaptive DPR |
+| UI screens | DOM overlays in the "Tape" style (title, select, lab, how-to, settings, pause, upgrade, game over). Fonts (Anton, Barlow Condensed, IBM Plex Mono, OFL) are embedded as base64 woff2 |
+| HUD | DOM (`#hud`, `updateHUD`): REC/timecode, anchor bar, score, health, retakes, ability, and a recording strip that shows each echo's firing segments plus the live take |
+| Title demo | `startDemo()` runs the real game with `botInput()`, invulnerable, silent, never touching the save (`G.demo`) |
+| Film look | CSS filter on the game canvas plus scanline/vignette overlay; turned off automatically if fps drops (`G.lowFx`) |
 | Test hooks | `window.LOOPBACK` (`start`, `step`, `input`, `gotoStage`, ...); `?test` disables real-time stepping |
 
 ## Key invariants

@@ -1,11 +1,16 @@
 # QA
 
-## Automated (`npm test`): 61 checks
+## Automated (`npm test`): 73 checks
 Startup, character select, movement, wall/arena collision, firing, loop to rewind to echo creation,
 **echo determinism** (position error < 0.001), echo firing, anchor HP persistence, retry flow (charge spent,
 state restored), pause/resume, sector clear to upgrade to next sector, boss 3 phases + lasers, game over +
 shard banking, same-seed spawn determinism, all 3 runners' abilities, heavy-scene performance budget, resize,
 real-time boot, zero page errors.
+
+## Tape UI
+Live demo plays behind the title without touching the save, embedded fonts load, HUD visible only in runs,
+recording strip shows a lane per echo, pause shows timecode, abandon leads to Run over, main menu returns
+to the live title, Escape backs out of sub-screens. Screens reviewed at 1280×720 and 844×390@3x.
 
 ## Mobile (emulated phone 844×390 @3x, touch)
 Touch mode detection, title/select/upgrade screens fit with no horizontal overflow, tap to start, left stick moves,
