@@ -35,4 +35,4 @@ Screenshots of the title, select, mid-fight (3 echoes), boss, upgrade and game-o
 - Balance (anchor HP, enemy counts, upgrade strength) is set on paper and by scripted bots. Real players should tune it.
 - iPhone Safari has no fullscreen API: use Share → Add to Home Screen for a full-screen experience.
 - Fonts load from Google Fonts. Offline, it falls back to system fonts.
-- Software-rendered headless Chromium: about 12 ms/frame with 115 enemies. GPU-accelerated browsers are much faster.
+- Software-rendered headless Chromium: about 6.5 ms/frame with 115 enemies (12.7 ms before the art pass). GPU-accelerated browsers are much faster.
