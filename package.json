@@ -1,0 +1,13 @@
+{
+  "name": "loopback",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Loopback: a time-loop arena game in a single HTML file",
+  "scripts": {
+    "test": "node tests/smoke.cjs",
+    "shots": "node tests/smoke.cjs --shots"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
+  }
+}
