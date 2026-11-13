@@ -2,17 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05060d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Loopback">
 <title>Loopback</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#05060d;--ink:#e8f1ff;--dim:#8792b3;--cyan:#3ef2ff;--pink:#ff3e9a;--gold:#ffd23e;--panel:rgba(9,12,26,.92);--line:rgba(62,242,255,.35)}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;color:var(--ink);font-family:Rajdhani,'Segoe UI',system-ui,sans-serif;user-select:none;-webkit-user-select:none}
-canvas{display:block;position:fixed;inset:0;width:100%;height:100%;cursor:crosshair}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;color:var(--ink);font-family:Rajdhani,'Segoe UI',system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
+body.touch canvas{cursor:default}
 #ui{position:fixed;inset:0;pointer-events:none}
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;pointer-events:auto;padding:24px;overflow-y:auto}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:18px;pointer-events:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+.screen>:first-child{margin-top:auto}.screen>:last-child{margin-bottom:auto}
+body:not(.touch) .touch-only{display:none!important}
+body.touch .desk-only{display:none!important}
+#rotate{position:fixed;inset:0;z-index:50;background:#05060d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:30px;font-family:Orbitron,monospace;letter-spacing:.12em}
+#rotate .phone{width:46px;height:80px;border:3px solid var(--cyan);border-radius:9px;box-shadow:0 0 24px rgba(62,242,255,.5);animation:rot 2s ease-in-out infinite}
+@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 .screen.dim{background:radial-gradient(ellipse at center,rgba(5,6,13,.72),rgba(5,6,13,.94))}
 .hidden{display:none!important}
 h2{font-family:Orbitron,monospace;font-weight:700;letter-spacing:.18em;margin:0;font-size:clamp(20px,3vw,34px);text-align:center}
@@ -46,7 +59,7 @@ button:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .card .kv span{color:var(--c,var(--cyan));font-weight:700}
 .bars{display:grid;grid-template-columns:70px 1fr;gap:4px 8px;font-size:14px;color:var(--dim);align-items:center;margin-top:auto}
 .bar{height:6px;background:rgba(255,255,255,.08)}.bar i{display:block;height:100%;background:var(--c,var(--cyan))}
-.card .lock{position:absolute;inset:0;background:rgba(5,6,13,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:Orbitron,monospace;letter-spacing:.12em}
+.card .lock{position:absolute;inset:0;background:rgba(5,6,13,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:Orbitron,monospace;letter-spacing:.1em;font-size:15px;text-align:center;padding:12px}
 .card .lock b{color:var(--gold);font-size:22px}
 .card .key{position:absolute;top:10px;right:14px;font-family:Orbitron,monospace;color:var(--dim);font-size:13px}
 .up .icon{font-size:40px;line-height:1;color:var(--c,var(--cyan));text-shadow:0 0 16px var(--c,var(--cyan))}
@@ -71,11 +84,32 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .new{color:var(--gold);font-family:Orbitron,monospace;letter-spacing:.1em;animation:pulse 1s infinite alternate}
 @keyframes pulse{from{opacity:.6}to{opacity:1}}
 @media (max-width:640px){.setting{grid-template-columns:110px 1fr 44px}.grid2{font-size:16px}}
+@media (max-height:560px){
+  .screen{gap:10px}
+  .logo{font-size:clamp(40px,9vw,72px)}
+  .tag{font-size:15px}
+  .menu{flex-direction:row;flex-wrap:wrap;justify-content:center;min-width:0;margin-top:4px;gap:8px}
+  button{padding:10px 16px;font-size:14px}
+  button.primary{font-size:16px}
+  h2{font-size:20px}
+  .sub,.meta{font-size:15px}
+  .cards{gap:10px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding:4px 2px 8px;justify-content:flex-start}
+  .card{width:220px;min-width:200px;min-height:0;padding:12px;gap:5px}
+  .card .name{font-size:20px}.card .desc{font-size:15px;line-height:1.15}.card .kv{font-size:14px}
+  .up{width:200px;min-height:0}.up .icon{font-size:30px}
+  .card .lock{font-size:12px;gap:6px}.card .lock b{font-size:18px}
+  .panel{padding:14px 18px}.panel ul{font-size:15px;line-height:1.3}
+  .big{font-size:34px}.grid2{font-size:15px;gap:2px 18px}
+  .setting{margin:4px 0;font-size:15px}.toggle{font-size:15px;margin:3px 0}
+}
+@media (max-height:560px) and (min-width:700px){.cards{justify-content:center}}
 </style>
 </head>
 <body>
 <canvas id="cv" aria-label="Loopback game canvas"></canvas>
 <noscript><p style="padding:40px">Loopback needs JavaScript enabled.</p></noscript>
+<div id="safe" style="position:fixed;left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden"></div>
+<div id="rotate" class="hidden"><div class="phone"></div><div>ROTATE YOUR DEVICE</div><div style="font-family:Rajdhani,sans-serif;letter-spacing:.04em;color:var(--dim);font-size:18px">Loopback plays in landscape.</div></div>
 <div id="ui">
   <section id="scr-title" class="screen">
     <div class="logo" data-text="LOOPBACK">LOOPBACK</div>
@@ -119,10 +153,13 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
       </ul>
       <h3 style="margin-top:16px">CONTROLS</h3>
       <ul>
-        <li><span class="kbd">WASD</span> / arrows move · <span class="kbd">MOUSE</span> aim · <span class="kbd">LEFT CLICK</span> fire (hold)</li>
-        <li><span class="kbd">SPACE</span> / <span class="kbd">RIGHT CLICK</span> / <span class="kbd">SHIFT</span> ability</li>
-        <li><span class="kbd">ESC</span> / <span class="kbd">P</span> pause · <span class="kbd">F</span> toggle auto-fire · <span class="kbd">M</span> mute</li>
-        <li>Gamepad: left stick move, right stick aim, RT fire, A / RB ability</li>
+        <li class="touch-only"><b>Left thumb</b> (anywhere on the left): move</li>
+        <li class="touch-only"><b>Right thumb</b>: drag to aim and fire. Just hold to auto-target the nearest enemy.</li>
+        <li class="touch-only">Tap the round button (bottom right) for your ability · <b>II</b> top-right pauses</li>
+        <li class="desk-only"><span class="kbd">WASD</span> / arrows move · <span class="kbd">MOUSE</span> aim · <span class="kbd">LEFT CLICK</span> fire (hold)</li>
+        <li class="desk-only"><span class="kbd">SPACE</span> / <span class="kbd">RIGHT CLICK</span> / <span class="kbd">SHIFT</span> ability</li>
+        <li class="desk-only"><span class="kbd">ESC</span> / <span class="kbd">P</span> pause · <span class="kbd">F</span> toggle auto-fire · <span class="kbd">M</span> mute</li>
+        <li class="desk-only">Gamepad: left stick move, right stick aim, RT fire, A / RB ability</li>
       </ul>
     </div>
     <button data-act="back">BACK</button>
@@ -146,7 +183,7 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 
   <section id="scr-upgrade" class="screen dim hidden">
     <h2 id="up-title">SECTOR CLEARED</h2>
-    <p class="sub">Choose an upgrade. Your echoes use it too. <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span></p>
+    <p class="sub">Choose an upgrade. Your echoes use it too. <span class="desk-only"><span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span></span></p>
     <div class="cards" id="up-cards"></div>
   </section>
 
@@ -307,14 +344,19 @@ const Snd = (() => {
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 const Input = { keys: new Set(), mx: W / 2, my: H / 2, mdown: false, ability: false, pad: null, padAim: null, usingPad: false };
-let view = { scale: 1, ox: 0, oy: 0, dpr: 1 };
+let view = { scale: 1, ox: 0, oy: 0, dpr: 1, dprCap: 2, hud: 1, safe: { l: 0, r: 0, t: 0, b: 0 } };
 function resize() {
-  view.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  view.dpr = Math.min(window.devicePixelRatio || 1, view.dprCap);
   cv.width = Math.round(innerWidth * view.dpr); cv.height = Math.round(innerHeight * view.dpr);
   view.scale = Math.min(innerWidth / W, innerHeight / H);
   view.ox = (innerWidth - W * view.scale) / 2; view.oy = (innerHeight - H * view.scale) / 2;
+  // HUD lives in screen space: it never shrinks below a readable size on phones
+  view.hud = Math.min(Math.max(view.scale, Touch.on ? 0.82 : 0.7), innerHeight / 430, innerWidth / 740);
+  const se = document.getElementById('safe');
+  if (se) { const r = se.getBoundingClientRect(); view.safe = { l: r.left, t: r.top, r: Math.max(0, innerWidth - r.right), b: Math.max(0, innerHeight - r.bottom) }; }
+  layoutTouch(); checkOrientation();
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 150));
 const GAME_KEYS = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight']);
 addEventListener('keydown', e => {
   Snd.init();
@@ -322,6 +364,7 @@ addEventListener('keydown', e => {
   if (GAME_KEYS.has(e.code) && !inMenu) e.preventDefault();
   if (e.repeat) return;
   Input.keys.add(e.code); Input.usingPad = false;
+  if (Touch.on && /^(Key[WASD]|Arrow)/.test(e.code)) setTouch(false);
   if ((e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !inMenu && G.mode === 'play' && !G.paused) Input.ability = true;
   if (e.code === 'Escape' || e.code === 'KeyP') togglePause();
   if (e.code === 'KeyM') { save.settings.muted = !save.settings.muted; persist(); Snd.volumes(); toast(save.settings.muted ? 'SOUND OFF' : 'SOUND ON'); }
@@ -330,7 +373,7 @@ addEventListener('keydown', e => {
   if (G.mode === 'upgrade' && /^Digit[123]$/.test(e.code)) chooseUpgrade(+e.code.slice(5) - 1);
 });
 addEventListener('keyup', e => Input.keys.delete(e.code));
-addEventListener('blur', () => { Input.keys.clear(); Input.mdown = false; if (G.mode === 'play' || G.mode === 'rewind' || G.mode === 'intro') pause(true); });
+addEventListener('blur', () => { Input.keys.clear(); Input.mdown = false; Touch.move = Touch.aim = null; if (G.mode === 'play' || G.mode === 'rewind' || G.mode === 'intro') pause(true); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && (G.mode === 'play' || G.mode === 'intro')) pause(true); });
 cv.addEventListener('mousemove', e => { Input.mx = (e.clientX - view.ox) / view.scale; Input.my = (e.clientY - view.oy) / view.scale; Input.usingPad = false; });
 cv.addEventListener('mousedown', e => { Snd.init(); if (e.button === 0) Input.mdown = true; if (e.button === 2 && G.mode === 'play' && !G.paused) Input.ability = true; });
@@ -354,7 +397,85 @@ function pollPad() {
   if (rx || ry) Input.padAim = Math.atan2(ry, rx);
 }
 
+// ---- touch: floating twin sticks + buttons (screen-space CSS px)
+const STICK_R = 62;
+const Touch = { on: false, move: null, aim: null, lastAim: null, ab: { x: 0, y: 0, r: 46 }, pz: { x: 0, y: 0, r: 0 }, abFlash: 0, idleL: { x: 0, y: 0 }, idleR: { x: 0, y: 0 } };
+function setTouch(on) {
+  if (Touch.on === on) return;
+  Touch.on = on; document.body.classList.toggle('touch', on);
+  if (on && view.dprCap > 1.5) view.dprCap = 1.5;
+  resize();
+}
+function layoutTouch() {
+  const sf = view.safe;
+  Touch.ab = { x: innerWidth - sf.r - 74, y: innerHeight - sf.b - 92, r: 44 };
+  Touch.idleL = { x: sf.l + 104, y: innerHeight - sf.b - 104 };
+  Touch.idleR = { x: innerWidth - sf.r - 210, y: innerHeight - sf.b - 104 };
+}
+function checkOrientation() {
+  const portrait = Touch.on && innerHeight > innerWidth * 1.05;
+  const el = document.getElementById('rotate'); if (el) el.classList.toggle('hidden', !portrait);
+  if (portrait && typeof G !== 'undefined' && G.run && (G.mode === 'play' || G.mode === 'intro' || G.mode === 'rewind')) pause(true);
+}
+const hitC = (c, x, y) => c.r > 0 && (x - c.x) ** 2 + (y - c.y) ** 2 < c.r * c.r;
+const inPlay = () => G.run && !G.paused && (G.mode === 'play' || G.mode === 'intro' || G.mode === 'rewind' || G.mode === 'dying');
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') { setTouch(false); return; }
+  e.preventDefault(); setTouch(true); Snd.init();
+  if (!inPlay()) return;
+  const x = e.clientX, y = e.clientY;
+  if (hitC(Touch.pz, x, y)) { togglePause(); return; }
+  if (hitC({ x: Touch.ab.x, y: Touch.ab.y, r: Touch.ab.r + 14 }, x, y)) { if (G.mode === 'play') Input.ability = true; Touch.abFlash = 10; return; }
+  const st = { id: e.pointerId, ox: x, oy: y, x, y };
+  if (x < innerWidth * 0.5) { if (!Touch.move) Touch.move = st; } else if (!Touch.aim) Touch.aim = st;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+}, { passive: false });
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') return;
+  for (const k of ['move', 'aim']) {
+    const s2 = Touch[k]; if (!s2 || s2.id !== e.pointerId) continue;
+    s2.x = e.clientX; s2.y = e.clientY;
+    const dx = s2.x - s2.ox, dy = s2.y - s2.oy, d = Math.hypot(dx, dy);
+    if (d > STICK_R) { s2.ox = s2.x - dx / d * STICK_R; s2.oy = s2.y - dy / d * STICK_R; } // stick follows the thumb
+  }
+}, { passive: true });
+function endPointer(e) { if (Touch.move && Touch.move.id === e.pointerId) Touch.move = null; if (Touch.aim && Touch.aim.id === e.pointerId) Touch.aim = null; }
+cv.addEventListener('pointerup', endPointer); cv.addEventListener('pointercancel', endPointer);
+document.addEventListener('touchend', () => Snd.init(), { passive: true });
+
+function nearestTarget(p) {
+  let best = null, bd = Infinity;
+  for (const e of G.enemies) { const d = d2(e.x, e.y, p.x, p.y); if (d < bd) { bd = d; best = e; } }
+  const a = G.st && G.st.anchor; if (a && a.active && !a.dead && d2(a.x, a.y, p.x, p.y) < bd * 1.6) best = a;
+  return best;
+}
+// gentle thumb aim-assist: snap to a target close to where the stick points
+function assistAim(p, ang) {
+  let best = ang, bestDiff = 0.22;
+  const consider = (o, r) => { const d = Math.hypot(o.x - p.x, o.y - p.y); if (d > 650) return; const a = Math.atan2(o.y - p.y, o.x - p.x); let df = Math.abs(a - ang); if (df > Math.PI) df = TAU - df; const tol = Math.max(bestDiff, 0) ; if (df < tol + Math.atan2(r, d) * 0.5) { bestDiff = df; best = a; } };
+  for (const e of G.enemies) consider(e, e.r);
+  const a = G.st && G.st.anchor; if (a && a.active && !a.dead) consider(a, a.r);
+  return best;
+}
+function readTouch() {
+  const p = G.player; let mx = 0, my = 0, fire = false, aim = Touch.lastAim != null ? Touch.lastAim : (p ? p.aim : 0);
+  if (Touch.move) {
+    let dx = (Touch.move.x - Touch.move.ox) / STICK_R, dy = (Touch.move.y - Touch.move.oy) / STICK_R; const m = Math.hypot(dx, dy);
+    if (m > 0.12) { const k = Math.min(1, (m - 0.12) / 0.75) / m; mx = dx * k; my = dy * k; }
+  }
+  if (Touch.aim && p) {
+    const dx = Touch.aim.x - Touch.aim.ox, dy = Touch.aim.y - Touch.aim.oy;
+    if (Math.hypot(dx, dy) > STICK_R * 0.28) aim = assistAim(p, Math.atan2(dy, dx));
+    else { const t = nearestTarget(p); if (t) aim = Math.atan2(t.y - p.y, t.x - p.x); }
+    fire = true;
+  } else if (save.settings.autofire && p) { fire = true; const t = nearestTarget(p); if (t) aim = Math.atan2(t.y - p.y, t.x - p.x); }
+  Touch.lastAim = aim;
+  const ability = Input.ability; Input.ability = false;
+  return { mx, my, aim, fire, ability };
+}
+
 function readInput() {
+  if (Touch.on && !G.virtual) return readTouch();
   if (G.virtual) { const v = G.virtual; const r = { mx: v.mx || 0, my: v.my || 0, aim: v.aim || 0, fire: !!v.fire, ability: !!v.ability }; v.ability = false; return r; }
   const k = Input.keys; let mx = 0, my = 0;
   if (k.has('KeyA') || k.has('ArrowLeft')) mx -= 1; if (k.has('KeyD') || k.has('ArrowRight')) mx += 1;
@@ -488,7 +609,13 @@ function computeStats() {
   };
 }
 
+function goImmersive() {
+  if (!Touch.on || G.manual) return;
+  const de = document.documentElement;
+  try { if (!document.fullscreenElement && de.requestFullscreen) de.requestFullscreen({ navigationUI: 'hide' }).then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* unsupported */ } }).catch(() => {}); } catch (e) { /* unsupported (e.g. iPhone Safari) */ }
+}
 function startRun(charId, opts = {}) {
+  goImmersive();
   const ch = CHARS[charId] || CHARS.volt;
   G.run = { char: ch, stage: 0, seed: opts.seed != null ? opts.seed : (Math.random() * 1e9) | 0, hard: !!opts.hard,
     charges: 2 + (save.perks.charge ? 1 : 0), upgrades: {}, score: 0, shards: 0, kills: 0, loops: 0, echoesLost: 0,
@@ -1118,8 +1245,8 @@ function toast(s) { G.toast = { s, t: 90 }; }
 function tutorialHints() {
   const st = G.st, t = st.tick, L = st.loop, ab = G.run.char.ability.name.toUpperCase();
   const H = (id, cond, msg, dur = 260) => { if (cond && !st.hintsShown[id]) { st.hintsShown[id] = true; G.hint = { s: msg, t: dur, max: dur }; } };
-  H('move', L === 0 && t === 10, 'WASD to move · MOUSE to aim · HOLD LEFT CLICK to fire', 240);
-  H('ab', L === 0 && t === 260, `SPACE or RIGHT CLICK: ${ab}`, 200);
+  H('move', L === 0 && t === 10, Touch.on ? 'LEFT THUMB: move · RIGHT THUMB: aim & fire (hold to auto-target)' : 'WASD to move · MOUSE to aim · HOLD LEFT CLICK to fire', 260);
+  H('ab', L === 0 && t === 270, Touch.on ? `Tap the round button: ${ab}` : `SPACE or RIGHT CLICK: ${ab}`, 200);
   H('anchor', L === 0 && t === ANCHOR_IN + 30, 'That\'s the ANCHOR. Damage you deal to it stays across loops.', 260);
   H('rw', L === 0 && t === st.loopTicks - 330, 'When the timer runs out, time rewinds…', 300);
   H('echo', L === 1 && t === 20, 'That\'s YOU from the last loop. It repeats everything you did.', 300);
@@ -1153,8 +1280,13 @@ function render() {
   if (G.mode === 'title' || !G.st) renderTitle();
   else renderGame();
   ctx.setTransform(s, 0, 0, s, view.ox * view.dpr, view.oy * view.dpr);
-  if (G.st && G.mode !== 'title') renderHUD();
   renderOverlay();
+  if (G.st && G.mode !== 'title') {
+    const u = view.hud * view.dpr;
+    ctx.setTransform(u, 0, 0, u, 0, 0);
+    renderHUD(innerWidth / view.hud, innerHeight / view.hud, view.hud);
+    if (Touch.on && inPlay()) { ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); renderTouch(); }
+  }
   G.renderMs = lerp(G.renderMs, performance.now() - t0, 0.1);
 }
 
@@ -1390,83 +1522,121 @@ function renderRewindFx() {
   ctx.globalAlpha = 1;
 }
 
-function renderHUD() {
-  const st = G.st, R = G.run, p = G.player, col = R.char.color, def = st.def;
-  if (G.mode === 'over' || G.mode === 'upgrade') return;
+function renderHUD(HW, HH, u) {
+  const st = G.st, R = G.run, p = G.player, col = R.char.color, def = st.def, touch = Touch.on, sf = view.safe;
+  if (G.mode === 'over' || G.mode === 'upgrade') { Touch.pz.r = 0; return; }
+  const L = 30 + sf.l / u, RT = HW - 30 - sf.r / u, T = sf.t / u, B = HH - sf.b / u;
   ctx.textBaseline = 'alphabetic';
   // dark backing strips so HUD text never sits on busy gameplay
-  const tg = ctx.createLinearGradient(0, 0, 0, 96); tg.addColorStop(0, 'rgba(4,5,12,.75)'); tg.addColorStop(1, 'rgba(4,5,12,0)'); ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 96);
-  const bgr = ctx.createLinearGradient(0, H - 80, 0, H); bgr.addColorStop(0, 'rgba(4,5,12,0)'); bgr.addColorStop(1, 'rgba(4,5,12,.7)'); ctx.fillStyle = bgr; ctx.fillRect(0, H - 80, W, 80);
+  const tg = ctx.createLinearGradient(0, 0, 0, T + 96); tg.addColorStop(0, 'rgba(4,5,12,.75)'); tg.addColorStop(1, 'rgba(4,5,12,0)'); ctx.fillStyle = tg; ctx.fillRect(0, 0, HW, T + 96);
+  const bgr = ctx.createLinearGradient(0, B - 80, 0, HH); bgr.addColorStop(0, 'rgba(4,5,12,0)'); bgr.addColorStop(1, 'rgba(4,5,12,.7)'); ctx.fillStyle = bgr; ctx.fillRect(0, B - 80, HW, HH - B + 80);
   // loop timer bar across the top
   const frac = st.clearing ? 0 : 1 - st.tick / st.loopTicks;
-  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, W, 5);
-  ctx.fillStyle = frac < 0.17 ? '#ff3e6a' : def.tint; ctx.fillRect(0, 0, W * clamp(frac, 0, 1), 5);
+  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, T, HW, 5);
+  ctx.fillStyle = frac < 0.17 ? '#ff3e6a' : def.tint; ctx.fillRect(0, T, HW * clamp(frac, 0, 1), 5);
   // top-left: sector & loop
   ctx.textAlign = 'left'; ctx.fillStyle = hexA(def.tint, 0.85); ctx.font = `700 12px ${FONT}`;
-  ctx.fillText(`SECTOR ${st.i + 1} · ${def.name}${R.hard ? ' · PARADOX' : ''}`, 36, 30);
-  ctx.fillStyle = '#ffffff'; ctx.font = `900 26px ${FONT}`; ctx.fillText(`LOOP ${st.loop + 1}`, 36, 60);
+  ctx.fillText(`SECTOR ${st.i + 1} · ${def.name}${R.hard ? ' · PARADOX' : ''}`, L, T + 30);
+  ctx.fillStyle = '#ffffff'; ctx.font = `900 26px ${FONT}`; const loopTxt = `LOOP ${st.loop + 1}`; ctx.fillText(loopTxt, L, T + 60);
+  const lw = ctx.measureText(loopTxt).width;
   const secs = st.clearing ? 0 : Math.max(0, (st.loopTicks - st.tick) / 60);
-  ctx.font = `700 20px ${FONT}`; ctx.fillStyle = secs < 5 && G.mode === 'play' ? '#ff3e6a' : '#bfe9ff'; ctx.fillText(`${secs.toFixed(1)}s`, 170, 60);
+  ctx.font = `700 20px ${FONT}`; ctx.fillStyle = secs < 5 && G.mode === 'play' ? '#ff3e6a' : '#bfe9ff'; ctx.fillText(`${secs.toFixed(1)}s`, L + lw + 16, T + 60);
   // anchor bar
-  const a = st.anchor, bw = 440, bx = W / 2 - bw / 2, by = 22;
+  const a = st.anchor, bw = Math.min(440, HW * 0.36), bx = HW / 2 - bw / 2, by = T + 22;
   ctx.textAlign = 'center'; ctx.font = `700 12px ${FONT}`; ctx.fillStyle = a.def.color;
-  ctx.fillText(`${a.def.boss ? 'BOSS' : 'ANCHOR'} · ${a.def.name}`, W / 2, by);
+  ctx.fillText(`${a.def.boss ? 'BOSS' : 'ANCHOR'} · ${a.def.name}`, HW / 2, by);
   ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(bx, by + 6, bw, 10);
   const hf = a.hp / a.max;
-  if (st.snap && !a.dead) { ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(bx, by + 6, bw * (st.snap.anchorHp / a.max), 10); }
+  if (st.snap && !a.dead) { ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(bx, by + 6, bw * clamp(st.snap.anchorHp / a.max, 0, 1), 10); }
   ctx.fillStyle = a.flash > 0 ? '#ffffff' : a.def.color; ctx.fillRect(bx, by + 6, bw * hf, 10);
   if (a.def.boss) { ctx.fillStyle = '#05060d'; ctx.fillRect(bx + bw * 0.33, by + 6, 2, 10); ctx.fillRect(bx + bw * 0.66, by + 6, 2, 10); }
   ctx.strokeStyle = hexA(a.def.color, 0.5); ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by + 6.5, bw - 1, 9);
-  ctx.font = `600 13px ${BODY}`; ctx.fillStyle = '#cfd8f0'; ctx.fillText(`${Math.ceil(hf * 100)}%  ·  damage persists between loops`, W / 2, by + 32);
-  // top-right: score, combo, shards
-  ctx.textAlign = 'right'; ctx.fillStyle = '#ffffff'; ctx.font = `900 24px ${FONT}`; ctx.fillText(fmt(R.score), W - 36, 46);
+  ctx.font = `600 13px ${BODY}`; ctx.fillStyle = '#cfd8f0'; ctx.fillText(bw > 300 ? `${Math.ceil(hf * 100)}%  ·  damage persists between loops` : `${Math.ceil(hf * 100)}%`, HW / 2, by + 32);
+  // top-right: pause button (touch), score, combo, shards
+  let sx = RT;
+  if (touch) {
+    const px = RT - 18, py = T + 34;
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 19, 0, TAU); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(px - 6, py - 7, 4, 14); ctx.fillRect(px + 2, py - 7, 4, 14);
+    Touch.pz = { x: px * u, y: py * u, r: 19 * u + 14 };
+    sx = RT - 52;
+  } else Touch.pz.r = 0;
+  ctx.textAlign = 'right'; ctx.fillStyle = '#ffffff'; ctx.font = `900 24px ${FONT}`; ctx.fillText(fmt(R.score), sx, T + 46);
   ctx.font = `700 14px ${FONT}`;
-  if (R.combo >= 3) { ctx.fillStyle = '#ff3e9a'; ctx.fillText(`${R.combo} COMBO  ×${comboMult().toFixed(1)}`, W - 36, 68); }
-  ctx.fillStyle = '#ffd23e'; ctx.fillText(`◆ ${Math.floor(R.shards)}`, W - 36, R.combo >= 3 ? 90 : 68);
+  if (R.combo >= 3) { ctx.fillStyle = '#ff3e9a'; ctx.fillText(`${R.combo} COMBO  ×${comboMult().toFixed(1)}`, sx, T + 68); }
+  ctx.fillStyle = '#ffd23e'; ctx.fillText(`◆ ${Math.floor(R.shards)}`, sx, R.combo >= 3 ? T + 90 : T + 68);
   // bottom-left: health & charges
-  const hy = H - 40;
-  ctx.textAlign = 'left'; ctx.font = `700 11px ${FONT}`; ctx.fillStyle = hexA(col, 0.8); ctx.fillText(`${R.char.name} · HEALTH`, 36, hy - 12);
+  const hy = B - 34;
+  ctx.textAlign = 'left'; ctx.font = `700 11px ${FONT}`; ctx.fillStyle = hexA(col, 0.8); ctx.fillText(`${R.char.name} · HEALTH`, L, hy - 12);
   for (let i = 0; i < R.stats.hp; i++) {
-    const x = 36 + i * 26; ctx.fillStyle = i < p.hp ? col : 'rgba(255,255,255,.1)';
+    const x = L + i * 26; ctx.fillStyle = i < p.hp ? col : 'rgba(255,255,255,.1)';
     ctx.beginPath(); ctx.moveTo(x, hy); ctx.lineTo(x + 20, hy); ctx.lineTo(x + 16, hy + 14); ctx.lineTo(x - 4, hy + 14); ctx.closePath(); ctx.fill();
   }
-  const cx0 = Math.max(36 + R.stats.hp * 26 + 24, 36 + ctx.measureText(`${R.char.name} · HEALTH`).width + 28);
+  const cx0 = Math.max(L + R.stats.hp * 26 + 24, L + ctx.measureText(`${R.char.name} · HEALTH`).width + 28);
   ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillText('CHARGES', cx0, hy - 12);
   for (let i = 0; i < Math.max(R.charges, 1); i++) {
     const x = cx0 + i * 18; ctx.fillStyle = i < R.charges ? '#ffd23e' : 'rgba(255,255,255,.12)';
     ctx.beginPath(); ctx.moveTo(x, hy); ctx.lineTo(x + 12, hy); ctx.lineTo(x + 6, hy + 7); ctx.lineTo(x + 12, hy + 14); ctx.lineTo(x, hy + 14); ctx.lineTo(x + 6, hy + 7); ctx.closePath(); ctx.fill();
   }
-  // bottom-center: ability
-  const ab = R.char.ability, k = p.acd > 0 ? 1 - p.acd / Math.round(R.stats.cd * 60) : 1;
-  ctx.textAlign = 'center'; ctx.font = `700 12px ${FONT}`; ctx.fillStyle = k >= 1 ? col : 'rgba(255,255,255,.5)';
-  ctx.fillText(`${ab.name.toUpperCase()}  [SPACE]`, W / 2, H - 46);
-  ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(W / 2 - 70, H - 38, 140, 5); ctx.fillStyle = col; ctx.fillRect(W / 2 - 70, H - 38, 140 * k, 5);
-  // bottom-right: echoes roster
-  ctx.textAlign = 'right'; ctx.font = `700 11px ${FONT}`; ctx.fillStyle = 'rgba(255,255,255,.6)';
-  ctx.fillText(`ECHOES ${G.ghosts.filter(g => g.alive).length}/${G.ghosts.length}`, W - 36, hy - 12);
+  // bottom-center: ability (desktop; on touch the ability button shows it)
+  if (!touch) {
+    const ab = R.char.ability, k = p.acd > 0 ? 1 - p.acd / Math.round(R.stats.cd * 60) : 1;
+    ctx.textAlign = 'center'; ctx.font = `700 12px ${FONT}`; ctx.fillStyle = k >= 1 ? col : 'rgba(255,255,255,.5)';
+    ctx.fillText(`${ab.name.toUpperCase()}  [SPACE]`, HW / 2, B - 46);
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(HW / 2 - 70, B - 38, 140, 5); ctx.fillStyle = col; ctx.fillRect(HW / 2 - 70, B - 38, 140 * k, 5);
+  }
+  // echoes roster: bottom-right on desktop, bottom-centre on touch (ability button lives bottom-right)
+  const n = G.ghosts.length, rosterRight = touch ? HW / 2 + n * 15 : RT;
+  ctx.textAlign = touch ? 'center' : 'right'; ctx.font = `700 11px ${FONT}`; ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.fillText(`ECHOES ${G.ghosts.filter(g => g.alive).length}/${n}`, touch ? HW / 2 : RT, hy - 12);
   G.ghosts.forEach((g, i) => {
-    const x = W - 48 - (G.ghosts.length - 1 - i) * 30, y = hy + 7;
+    const x = rosterRight - 12 - (n - 1 - i) * 30, y = hy + 7;
     ctx.globalAlpha = g.alive ? 1 : 0.35; ctx.strokeStyle = g.alive ? col : '#ff3e6a'; ctx.lineWidth = 2; ctx.setLineDash(g.alive ? [3, 2] : []);
     ctx.beginPath(); ctx.arc(x, y, 10, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
     if (g.alive) { ctx.fillStyle = hexA(col, 0.6); ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, 7, -Math.PI / 2, -Math.PI / 2 + TAU * g.hp / g.max); ctx.closePath(); ctx.fill(); }
     else { ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke(); }
     ctx.globalAlpha = 1;
   });
-  if (!G.ghosts.length) { ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.font = `600 14px ${BODY}`; ctx.fillText('first echo after this loop', W - 36, hy + 12); }
+  if (!n) { ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.font = `600 14px ${BODY}`; ctx.fillText('first echo after this loop', touch ? HW / 2 : RT, hy + 12); }
   // tutorial hint
   if (G.hint && G.hint.t > 0) {
-    if (G.mode === 'play') G.hint.t--;
+    if (G.mode === 'play' && !G.paused) G.hint.t--;
     const a2 = clamp(Math.min(G.hint.t, G.hint.max - G.hint.t) / 20, 0, 1);
-    ctx.globalAlpha = a2; ctx.font = `700 22px ${BODY}`; ctx.textAlign = 'center';
-    const w = ctx.measureText(G.hint.s).width + 40;
-    ctx.fillStyle = 'rgba(5,8,20,.82)'; ctx.fillRect(W / 2 - w / 2, H - 120, w, 40);
-    ctx.strokeStyle = hexA(col, 0.6); ctx.strokeRect(W / 2 - w / 2 + 0.5, H - 119.5, w - 1, 39);
-    ctx.fillStyle = '#ffffff'; ctx.fillText(G.hint.s, W / 2, H - 93); ctx.globalAlpha = 1;
+    ctx.globalAlpha = a2; ctx.font = `700 ${touch ? 19 : 22}px ${BODY}`; ctx.textAlign = 'center';
+    const w = Math.min(HW - 40, ctx.measureText(G.hint.s).width + 40), hyy = touch ? T + 104 : B - 120;
+    ctx.fillStyle = 'rgba(5,8,20,.82)'; ctx.fillRect(HW / 2 - w / 2, hyy, w, 40);
+    ctx.strokeStyle = hexA(col, 0.6); ctx.strokeRect(HW / 2 - w / 2 + 0.5, hyy + 0.5, w - 1, 39);
+    ctx.fillStyle = '#ffffff'; ctx.fillText(G.hint.s, HW / 2, hyy + 27, w - 16); ctx.globalAlpha = 1;
   }
   if (G.debug) {
     ctx.textAlign = 'left'; ctx.font = `600 13px monospace`; ctx.fillStyle = '#7dff6e';
-    ctx.fillText(`fps ${G.fps.toFixed(0)}  sim ${G.simMs.toFixed(2)}ms  render ${G.renderMs.toFixed(2)}ms  ent ${G.enemies.length}  pb ${G.pb.length}  eb ${G.eb.length}  parts ${G.parts.length}`, 36, 100);
+    ctx.fillText(`fps ${G.fps.toFixed(0)}  sim ${G.simMs.toFixed(2)}ms  render ${G.renderMs.toFixed(2)}ms  dpr ${view.dpr}  ent ${G.enemies.length}  pb ${G.pb.length}  eb ${G.eb.length}  parts ${G.parts.length}`, L, T + 100);
   }
+}
+
+// On-screen sticks and ability button (screen space, CSS px)
+function renderTouch() {
+  const R = G.run, col = R.char.color, p = G.player;
+  const stick = (s2, idle, label) => {
+    const ox = s2 ? s2.ox : idle.x, oy = s2 ? s2.oy : idle.y, kx = s2 ? s2.x : ox, ky = s2 ? s2.y : oy;
+    ctx.globalAlpha = s2 ? 0.55 : 0.16;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ox, oy, STICK_R, 0, TAU); ctx.stroke();
+    ctx.fillStyle = s2 ? hexA(col, 0.5) : 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(kx, ky, 26, 0, TAU); ctx.fill();
+    if (!s2 && label && G.st && G.st.loop === 0 && R.tutorial) { ctx.globalAlpha = 0.45; ctx.fillStyle = '#ffffff'; ctx.font = `700 11px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText(label, ox, oy + STICK_R + 16); }
+    ctx.globalAlpha = 1;
+  };
+  stick(Touch.move, Touch.idleL, 'MOVE');
+  stick(Touch.aim, Touch.idleR, 'AIM · FIRE');
+  // ability button with cooldown ring
+  const b = Touch.ab, k = p.acd > 0 ? 1 - p.acd / Math.round(R.stats.cd * 60) : 1, ready = k >= 1;
+  if (Touch.abFlash > 0) Touch.abFlash--;
+  ctx.globalAlpha = ready ? 0.85 : 0.45;
+  ctx.fillStyle = Touch.abFlash > 0 ? hexA(col, 0.6) : 'rgba(8,12,28,.6)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 3, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 3, -Math.PI / 2, -Math.PI / 2 + TAU * k); ctx.stroke();
+  ctx.fillStyle = ready ? '#ffffff' : 'rgba(255,255,255,.6)'; ctx.font = `700 12px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(R.char.ability.name.toUpperCase(), b.x, b.y); ctx.textBaseline = 'alphabetic';
+  ctx.globalAlpha = 1;
 }
 
 function renderOverlay() {
@@ -1641,7 +1811,7 @@ function togglePause() {
 function pause(on) {
   if (!G.run || G.mode === 'over' || G.mode === 'upgrade' || G.mode === 'title') return;
   if (on && G.paused) return;
-  G.paused = on; Input.mdown = false;
+  G.paused = on; Input.mdown = false; Touch.move = Touch.aim = null;
   if (on) { showScreen('pause'); Snd.filter(600, 0.2); } else { showScreen(null); Snd.filter(9000, 0.2); }
 }
 
@@ -1674,7 +1844,13 @@ let lastT = performance.now(), acc = 0, fpsAcc = 0, fpsN = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
-  fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { G.fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5) {
+    G.fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
+    // adaptive resolution: if a device struggles during play, drop the render resolution once
+    if (G.mode === 'play' && !G.paused && G.fps < 45) G.slowT = (G.slowT || 0) + 0.5; else G.slowT = Math.max(0, (G.slowT || 0) - 0.5);
+    if (G.slowT >= 3 && view.dprCap > 1 && (window.devicePixelRatio || 1) > 1) { view.dprCap = 1; G.slowT = 0; resize(); }
+  }
   pollPad();
   if (!G.manual && !G.paused) {
     const s0 = performance.now();
@@ -1702,9 +1878,11 @@ window.LOOPBACK = {
   input(v) { G.virtual = v ? Object.assign(G.virtual || {}, v) : null; },
   chooseUpgrade, togglePause, toTitle, render,
   gotoStage(i) { startStage(i); },
+  Touch, view,
   get save() { return save; }, resetSave() { save = defaultSave(); persist(); },
 };
 
+if (window.matchMedia && matchMedia('(pointer: coarse)').matches) setTouch(true); else resize();
 showScreen('title');
 requestAnimationFrame(frame);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { glowCache.clear(); });

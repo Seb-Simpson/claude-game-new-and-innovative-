@@ -248,6 +248,72 @@ function check(name, cond, detail = '') {
   check('real-time loop advances simulation', await page2.evaluate(() => LOOPBACK.G.mode === 'play' && LOOPBACK.G.st.tick > 20));
   if (SHOTS) await page2.screenshot({ path: path.join(shotDir, '08-realtime.png') });
 
+
+  // ================= MOBILE (touch, phone landscape) =================
+  const mctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const mp = await mctx.newPage();
+  mp.on('pageerror', e => errors.push('mobile: ' + e));
+  await mp.goto(URL + '?test');
+  await mp.waitForTimeout(400);
+  await mp.evaluate(() => LOOPBACK.resetSave());
+  check('mobile: touch mode detected', await mp.evaluate(() => document.body.classList.contains('touch') && LOOPBACK.Touch.on));
+  const fits = async sel => mp.evaluate(sel => [...document.querySelectorAll(sel)].every(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.right <= innerWidth + 1; }), sel);
+  const playBox = await mp.locator('button[data-act=play]').boundingBox();
+  check('mobile: PLAY button visible without scrolling', playBox && playBox.y + playBox.height <= 390, JSON.stringify(playBox));
+  check('mobile: title has no horizontal overflow', await mp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm1-title.png') });
+  await mp.tap('button[data-act=play]');
+  await mp.waitForTimeout(100);
+  check('mobile: runner cards fit/scroll inside screen', await fits('#scr-select h2'));
+  if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm2-select.png') });
+  await mp.tap('#char-cards .card');
+  check('mobile: tapping a runner starts a run', await mp.evaluate(() => LOOPBACK.G.mode === 'intro'));
+  await mp.evaluate(() => LOOPBACK.step(160));
+  const pdown = (id, x, y) => mp.evaluate(([id, x, y]) => document.getElementById('cv').dispatchEvent(new PointerEvent('pointerdown', { pointerId: id, pointerType: 'touch', clientX: x, clientY: y, bubbles: true, cancelable: true })), [id, x, y]);
+  const pmove = (id, x, y) => mp.evaluate(([id, x, y]) => document.getElementById('cv').dispatchEvent(new PointerEvent('pointermove', { pointerId: id, pointerType: 'touch', clientX: x, clientY: y, bubbles: true })), [id, x, y]);
+  const pup = (id, x, y) => mp.evaluate(([id, x, y]) => document.getElementById('cv').dispatchEvent(new PointerEvent('pointerup', { pointerId: id, pointerType: 'touch', clientX: x, clientY: y, bubbles: true })), [id, x, y]);
+  const mx0 = await mp.evaluate(() => LOOPBACK.G.player.x);
+  await pdown(1, 150, 280); await pmove(1, 220, 280);
+  await mp.evaluate(() => { LOOPBACK.G.player.inv = 99; LOOPBACK.step(30); });
+  const mx1 = await mp.evaluate(() => LOOPBACK.G.player.x);
+  check('mobile: left stick moves player', mx1 > mx0 + 50, `${mx0} -> ${mx1}`);
+  await pdown(2, 600, 200);
+  const shots0 = await mp.evaluate(() => { LOOPBACK.G.pb.length = 0; LOOPBACK.step(20); return LOOPBACK.G.pb.length; });
+  check('mobile: holding right side fires (auto-target)', shots0 > 0, `bullets=${shots0}`);
+  await pmove(2, 600, 120);
+  const aimUp = await mp.evaluate(() => { LOOPBACK.G.enemies.length = 0; LOOPBACK.G.st.anchor.active = false; LOOPBACK.step(2); return LOOPBACK.G.player.aim; });
+  check('mobile: dragging right stick aims', Math.abs(aimUp + Math.PI / 2) < 0.2, `aim=${aimUp}`);
+  if (SHOTS) { await mp.evaluate(() => { const G = LOOPBACK.G; G.st.anchor.active = true; for (let i = 0; i < 500; i++) { G.player.inv = 5; LOOPBACK.step(1); } LOOPBACK.render(); }); await mp.screenshot({ path: path.join(shotDir, 'm3-gameplay.png') }); }
+  await pup(1, 220, 280); await pup(2, 600, 120);
+  const abBtn = await mp.evaluate(() => LOOPBACK.Touch.ab);
+  await mp.evaluate(() => { LOOPBACK.G.player.acd = 0; });
+  await pdown(3, abBtn.x, abBtn.y); await pup(3, abBtn.x, abBtn.y);
+  check('mobile: ability button triggers ability', await mp.evaluate(() => { LOOPBACK.step(2); return LOOPBACK.G.player.acd > 0; }));
+  check('mobile: sticks released after lift', await mp.evaluate(() => !LOOPBACK.Touch.move && !LOOPBACK.Touch.aim));
+  const pz = await mp.evaluate(() => { LOOPBACK.render(); return LOOPBACK.Touch.pz; });
+  await pdown(4, pz.x, pz.y);
+  check('mobile: pause button pauses', await mp.isVisible('#scr-pause'));
+  if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm4-pause.png') });
+  await mp.tap('button[data-act=resume]');
+  check('mobile: resume via tap', !(await mp.isVisible('#scr-pause')) && await mp.evaluate(() => !LOOPBACK.G.paused));
+  // upgrade screen fits on phone
+  await mp.evaluate(() => { const G = LOOPBACK.G; for (let i = 0; i < 400 && G.mode === 'play'; i++) { const a = G.st.anchor; if (a.active && !a.dead) { a.hp = 0.5; G.pb.push({ x: a.x, y: a.y, vx: 0, vy: 0, r: 5, dmg: 5, life: 1, pierce: 0, bounce: 0, ghost: false, homing: 0, chain: 0, hits: null, color: '#fff' }); } G.player.inv = 5; LOOPBACK.step(1); } });
+  check('mobile: upgrade cards visible', await mp.evaluate(() => { const c = [...document.querySelectorAll('#up-cards .card')]; return c.length === 3 && c.every(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.right <= innerWidth + 1; }); }));
+  if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm5-upgrade.png') });
+  await mp.evaluate(() => LOOPBACK.chooseUpgrade(0));
+  await mp.evaluate(() => LOOPBACK.step(170));
+  // portrait: rotate prompt + auto-pause
+  await mp.setViewportSize({ width: 390, height: 844 });
+  await mp.waitForTimeout(150);
+  check('mobile: portrait shows rotate prompt', await mp.isVisible('#rotate'));
+  check('mobile: portrait pauses the run', await mp.evaluate(() => LOOPBACK.G.paused));
+  await mp.setViewportSize({ width: 844, height: 390 });
+  await mp.waitForTimeout(150);
+  check('mobile: landscape hides rotate prompt', !(await mp.isVisible('#rotate')));
+  await mctx.close();
+  // desktop must stay non-touch
+  check('desktop: not in touch mode', await page.evaluate(() => !LOOPBACK.Touch.on));
+
   check('no page errors', errors.length === 0, errors.join(' | '));
   await browser.close();
   console.log(results.join('\n'));

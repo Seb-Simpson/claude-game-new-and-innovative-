@@ -7,7 +7,7 @@ becomes an **Echo**: a ghost that replays every step, shot and ability you made,
 alongside you. Stack up to eight versions of yourself to destroy each sector's Anchor.
 
 ## Play
-Open `index.html` in any modern desktop browser (Chrome, Edge, Firefox, Safari). No install, no build.
+Open `index.html` in any modern browser: desktop (Chrome, Edge, Firefox, Safari) or phone/tablet in landscape. No install, no build.
 
 | Action | Keys |
 |---|---|
@@ -18,6 +18,7 @@ Open `index.html` in any modern desktop browser (Chrome, Edge, Firefox, Safari).
 | Auto-fire toggle | F |
 | Mute | M |
 | Gamepad | Left stick move, right stick aim, RT fire, A/RB ability |
+| **Touch** | Left thumb: move (floating stick) · Right thumb: drag to aim and fire, or just hold to auto-target · Round button: ability · **II**: pause |
 
 ## How it works
 - **Sectors** have an **Anchor**. Its movement and attacks repeat identically each loop, and
