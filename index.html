@@ -179,7 +179,8 @@ const rnd = Math.random;
 const rr = (a, b) => a + rnd() * (b - a);
 const d2 = (ax, ay, bx, by) => { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; };
 function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+const hexCache = new Map();
+function hexA(hex, a) { const k = hex + a; let v = hexCache.get(k); if (v) return v; const n = parseInt(hex.slice(1), 16); v = `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; if (hexCache.size < 4000) hexCache.set(k, v); return v; }
 function segDist2(px, py, ax, ay, bx, by) { const vx = bx - ax, vy = by - ay; const t = clamp(((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy || 1), 0, 1); return d2(px, py, ax + vx * t, ay + vy * t); }
 const fmt = n => Math.floor(n).toLocaleString('en-US');
 
@@ -317,10 +318,11 @@ addEventListener('resize', resize); resize();
 const GAME_KEYS = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight']);
 addEventListener('keydown', e => {
   Snd.init();
-  if (GAME_KEYS.has(e.code) && G.mode !== 'title') e.preventDefault();
+  const inMenu = !!current();
+  if (GAME_KEYS.has(e.code) && !inMenu) e.preventDefault();
   if (e.repeat) return;
   Input.keys.add(e.code); Input.usingPad = false;
-  if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') Input.ability = true;
+  if ((e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !inMenu && G.mode === 'play' && !G.paused) Input.ability = true;
   if (e.code === 'Escape' || e.code === 'KeyP') togglePause();
   if (e.code === 'KeyM') { save.settings.muted = !save.settings.muted; persist(); Snd.volumes(); toast(save.settings.muted ? 'SOUND OFF' : 'SOUND ON'); }
   if (e.code === 'KeyF' && G.run) { save.settings.autofire = !save.settings.autofire; persist(); toast(save.settings.autofire ? 'AUTO-FIRE ON' : 'AUTO-FIRE OFF'); }
@@ -331,7 +333,7 @@ addEventListener('keyup', e => Input.keys.delete(e.code));
 addEventListener('blur', () => { Input.keys.clear(); Input.mdown = false; if (G.mode === 'play' || G.mode === 'rewind' || G.mode === 'intro') pause(true); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && (G.mode === 'play' || G.mode === 'intro')) pause(true); });
 cv.addEventListener('mousemove', e => { Input.mx = (e.clientX - view.ox) / view.scale; Input.my = (e.clientY - view.oy) / view.scale; Input.usingPad = false; });
-cv.addEventListener('mousedown', e => { Snd.init(); if (e.button === 0) Input.mdown = true; if (e.button === 2) Input.ability = true; });
+cv.addEventListener('mousedown', e => { Snd.init(); if (e.button === 0) Input.mdown = true; if (e.button === 2 && G.mode === 'play' && !G.paused) Input.ability = true; });
 addEventListener('mouseup', e => { if (e.button === 0) Input.mdown = false; });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -438,7 +440,7 @@ const UPGRADES = [
   { id: 'pierce', name: 'Phase Rounds', icon: '➶', desc: 'Shots pierce +1 enemy', max: 3, w: 0.8 },
   { id: 'bounce', name: 'Ricochet', icon: '⤭', desc: 'Shots bounce off walls +1 time', max: 3, w: 0.7 },
   { id: 'homing', name: 'Seeker Echoes', icon: '◎', desc: 'Echo shots home in harder; yours curve too', max: 3, w: 0.9 },
-  { id: 'stable', name: 'Stable Echoes', icon: '⬡', desc: 'Echoes gain +2 stability (repairs current echoes)', max: 3, w: 0.9 },
+  { id: 'stable', name: 'Stable Echoes', icon: '⬡', desc: 'Echoes gain +2 stability: much harder to break', max: 3, w: 0.9 },
   { id: 'hp', name: 'Reinforced Core', icon: '✚', desc: '+1 max health', max: 3, w: 0.9 },
   { id: 'charge', name: 'Chrono Battery', icon: '⧗', desc: '+1 Chrono Charge (an extra retry)', max: 9, w: 0.55 },
   { id: 'volatile', name: 'Volatile Payload', icon: '✸', desc: 'Enemies explode on death, damaging others', max: 3, w: 0.8 },
@@ -505,7 +507,7 @@ function startStage(i) {
     anchor: makeAnchor(i), snap: null, clearing: 0, hintsShown: {} };
   G.ghosts = []; G.enemies = []; G.pb = []; G.eb = []; G.pickups = []; G.portals = []; G.parts = []; G.texts = [];
   G.player = makePlayer();
-  G.mode = 'intro'; G.introT = 150;
+  G.mode = 'intro'; G.introT = 150; G.timeScale = 1; G.hitstop = 0;
   const boss = ANCHORS[i].boss;
   banner(`SECTOR ${i + 1}`, def.name, def.tint, 150, boss ? 'FINAL SECTOR — DESTROY THE CHRONARCH' : `Destroy the anchor: ${ANCHORS[i].name}`);
   Snd.setMusic(0); Snd.filter(9000);
@@ -553,7 +555,10 @@ function beginLoop(restart) {
   while (st.layers.length <= st.loop) st.layers.push(makeLayer(st.i, st.layers.length));
   st.sched = st.layers.slice(0, st.loop + 1).flat().sort((a, b) => a.t - b.t); st.si = 0;
   st.rec = newRec(st.loopTicks);
-  if (!restart) st.snap = { anchorHp: st.anchor.hp, ghostHp: G.ghosts.map(g => g.hp), ghostAlive: G.ghosts.map(g => g.alive) };
+  const R0 = G.run;
+  if (!restart) st.snap = { anchorHp: st.anchor.hp, ghostHp: G.ghosts.map(g => g.hp), ghostAlive: G.ghosts.map(g => g.alive),
+    shards: R0.shards, score: R0.score, kills: R0.kills, echoesLost: R0.echoesLost, bestCombo: R0.bestCombo };
+  R0.combo = 0; R0.comboT = 0; Input.ability = false; G.hitstop = 0;
   G.enemies = []; G.pb = []; G.eb = []; G.pickups = []; G.portals = [];
   st.anchor.lasers = []; st.anchor.active = false; st.anchor.phase = anchorPhase(st.anchor);
   const p = G.player; Object.assign(p, makePlayer());
@@ -586,7 +591,9 @@ function finishRewind() {
     }
     st.loop++; G.run.loops++;
   } else {
-    st.anchor.hp = st.snap.anchorHp;
+    const sn = st.snap, R = G.run;
+    st.anchor.hp = sn.anchorHp; st.anchor.dead = false; st.anchor.active = false; st.anchor.flash = 0;
+    R.shards = sn.shards; R.score = sn.score; R.kills = sn.kills; R.echoesLost = sn.echoesLost; R.bestCombo = sn.bestCombo;
     G.ghosts.forEach((g, i) => { g.hp = st.snap.ghostHp[i]; g.alive = st.snap.ghostAlive[i]; });
   }
   G.rewind = null;
@@ -637,7 +644,7 @@ function finishStage() {
 
 function endRun(won) {
   const R = G.run;
-  G.mode = 'over'; Snd.setMusic(0); Snd.filter(9000);
+  G.mode = 'over'; G.timeScale = 1; G.hitstop = 0; Snd.setMusic(0); Snd.filter(9000);
   Snd.play(won ? 'win' : 'lose');
   const earned = Math.round(R.shards);
   const beforeAfford = affordableCount();
@@ -677,13 +684,17 @@ function simTick() {
       G.portals.push({ x: ev.x, y: ev.y, t: 0, dur: 48, type: ev.type, n: ev.n });
     }
   }
+  const live = () => G.mode === 'play';
   updatePlayer(inp);
   for (const g of G.ghosts) updateGhost(g, st.tick);
   if (!st.clearing) updateAnchor(st.anchor, st.tick);
+  if (!live()) return;
   updatePortals();
   updateEnemies();
+  if (!live()) return;
   updatePlayerBullets();
   updateEnemyBullets();
+  if (!live()) return;
   updatePickups();
   updateParts();
   if (R.comboT > 0 && --R.comboT === 0) R.combo = 0;
@@ -764,7 +775,7 @@ function doAbility(actor, isGhost, ox, oy, inp) {
   } else if (kind === 'shock') {
     const rad = 160;
     G.parts.push(mkRing(actor.x, actor.y, color, rad, 22), mkRing(actor.x, actor.y, '#ffffff', rad * 0.7, 16));
-    for (const e of G.enemies) {
+    for (const e of G.enemies.slice()) {
       const dd = d2(e.x, e.y, actor.x, actor.y);
       if (dd < (rad + e.r) ** 2) { const d = Math.sqrt(dd) || 1; e.kx += (e.x - actor.x) / d * 520; e.ky += (e.y - actor.y) / d * 520; damageEnemy(e, 3 * R.stats.dmg * dmgMult(), isGhost); }
     }
@@ -788,7 +799,7 @@ function dmgMult() { const s = G.run.stats; return 1 + 0.08 * s.reso * G.ghosts.
 
 function explode(x, y, rad, dmg, color, quiet) {
   G.parts.push(mkRing(x, y, color, rad, 20)); burst(x, y, color, 18, 260);
-  for (const e of G.enemies) if (d2(e.x, e.y, x, y) < (rad + e.r) ** 2) damageEnemy(e, dmg, true);
+  for (const e of G.enemies.slice()) if (d2(e.x, e.y, x, y) < (rad + e.r) ** 2) damageEnemy(e, dmg, true);
   const a = G.st.anchor; if (a.active && d2(a.x, a.y, x, y) < (rad + a.r) ** 2) damageAnchor(dmg);
   if (!quiet) addShake(5);
 }
@@ -835,7 +846,7 @@ function runAttack(a, k, T, t) {
           const x2 = a.x + Math.cos(ang) * 1600, y2 = a.y + Math.sin(ang) * 1600;
           a.lasers.push({ x1: a.x, y1: a.y, x2, y2, firing, prog: firing ? (m - warn) / fire : m / warn });
           const p = G.player;
-          if (firing && p.alive && segDist2(p.x, p.y, a.x, a.y, x2, y2) < (11 + p.r * 0.5) ** 2) hurtPlayer();
+          if (firing && p.alive && segDist2(p.x, p.y, a.x, a.y, x2, y2) < (11 + p.r * 0.5) ** 2) { hurtPlayer(); if (G.mode !== 'play') return; }
         }
       }
       break;
@@ -910,7 +921,7 @@ function updateEnemies() {
     }
     if (e.kind !== 'wraith') { if (collideWalls(e, e.r) && e.state === 2) { e.state = 0; e.cd = 60; addShake(2); } } else clampArena(e, e.r);
     // contact
-    if (p.alive && d2(e.x, e.y, p.x, p.y) < (e.r + p.r * 0.75) ** 2) hurtPlayer();
+    if (p.alive && d2(e.x, e.y, p.x, p.y) < (e.r + p.r * 0.75) ** 2) { hurtPlayer(); if (G.mode !== 'play') return; }
     for (const g of G.ghosts) if (g.alive && !g.done && d2(e.x, e.y, g.x, g.y) < (e.r + 12) ** 2) hurtGhost(g, 1);
   }
 }
@@ -1035,7 +1046,7 @@ function updateEnemyBullets() {
     if (b.flip && b.age === b.flip) { b.vx = -b.vx * 1.15; b.vy = -b.vy * 1.15; burst(b.x, b.y, b.color, 2, 60); }
     b.x += b.vx * DT; b.y += b.vy * DT;
     let dead = --b.life <= 0 || b.x < ARENA.x0 - 10 || b.x > ARENA.x1 + 10 || b.y < ARENA.y0 - 10 || b.y > ARENA.y1 + 10 || pointInWall(b.x, b.y, walls, 0);
-    if (!dead && G.mode === 'play' && p.alive && d2(b.x, b.y, p.x, p.y) < (b.r + p.r * 0.55) ** 2 && p.inv <= 0 && p.dashT <= 0) { hurtPlayer(); dead = true; }
+    if (!dead && G.mode === 'play' && p.alive && d2(b.x, b.y, p.x, p.y) < (b.r + p.r * 0.55) ** 2 && p.inv <= 0 && p.dashT <= 0) { hurtPlayer(); dead = true; if (G.mode !== 'play') return; }
     if (!dead && !b.anchor) for (const g of G.ghosts) if (g.alive && !g.done && d2(b.x, b.y, g.x, g.y) < (b.r + 9) ** 2) { hurtGhost(g, 1); dead = true; break; }
     if (dead) G.eb.splice(i, 1);
   }
@@ -1591,9 +1602,11 @@ function showUpgradeScreen() {
     box.appendChild(el);
   });
   showScreen('upgrade');
+  upReadyAt = G.manual ? 0 : performance.now() + 450; // swallow stray clicks from the fight
 }
+let upReadyAt = 0;
 function chooseUpgrade(i) {
-  if (G.mode !== 'upgrade' || !upChoices[i]) return;
+  if (G.mode !== 'upgrade' || !upChoices[i] || performance.now() < upReadyAt) return;
   applyUpgrade(upChoices[i].id);
   upChoices = [];
   showScreen(null);
@@ -1622,10 +1635,12 @@ function showOverScreen(won, earned, newBest, unlockedHard, canBuy) {
 
 function togglePause() {
   if (G.mode === 'title' || G.mode === 'over' || G.mode === 'upgrade') { if (current() && current() !== 'title' && current() !== 'over' && current() !== 'upgrade') back(); return; }
+  if (G.paused && current() && current() !== 'pause') { back(); return; }
   pause(!G.paused);
 }
 function pause(on) {
   if (!G.run || G.mode === 'over' || G.mode === 'upgrade' || G.mode === 'title') return;
+  if (on && G.paused) return;
   G.paused = on; Input.mdown = false;
   if (on) { showScreen('pause'); Snd.filter(600, 0.2); } else { showScreen(null); Snd.filter(9000, 0.2); }
 }
@@ -1650,7 +1665,7 @@ addEventListener('keydown', e => {
   if (current() === 'select' && /^Digit[123]$/.test(e.code)) { const el = $('char-cards').children[+e.code.slice(5) - 1]; el && el.click(); }
 });
 
-function toTitle() { G.mode = 'title'; G.run = null; G.st = null; G.paused = false; G.banners = []; Snd.setMusic(0); Snd.filter(9000); showScreen('title'); }
+function toTitle() { G.timeScale = 1; G.hitstop = 0; G.mode = 'title'; G.run = null; G.st = null; G.paused = false; G.banners = []; Snd.setMusic(0); Snd.filter(9000); showScreen('title'); }
 
 // =====================================================================
 // MAIN LOOP

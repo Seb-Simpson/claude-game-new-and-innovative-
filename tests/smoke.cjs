@@ -168,6 +168,34 @@ function check(name, cond, detail = '') {
   check('shards banked to save', over.shards > 0, JSON.stringify(over));
   await shot('07-gameover');
 
+  // ---- regressions from independent review
+  const reg = await ev(() => {
+    const G = LOOPBACK.G, out = {};
+    const killPlayer = () => { G.player.inv = 0; G.player.hp = 1; G.player.dashT = 0; G.eb.push({ x: G.player.x, y: G.player.y, vx: 0, vy: 0, r: 8, color: '#f00', life: 99, age: 0, anchor: false, flip: 0 }); G.eb.push({ x: G.player.x, y: G.player.y, vx: 0, vy: 0, r: 8, color: '#f00', life: 99, age: 0, anchor: false, flip: 0 }); };
+    // #1 death on last loop tick with no charges must end the run
+    LOOPBACK.start('volt', { seed: 3 }); LOOPBACK.step(160); LOOPBACK.input({ mx: 0, my: 0, fire: false });
+    G.run.charges = 0; while (G.st.tick < G.st.loopTicks - 1) { G.player.inv = 5; LOOPBACK.step(1); }
+    killPlayer(); LOOPBACK.step(1); out.lastTickNoCharge = G.mode; // expect dying
+    // #1b with charges: retry, not success
+    LOOPBACK.start('volt', { seed: 3 }); LOOPBACK.step(160);
+    while (G.st.tick < G.st.loopTicks - 1) { G.player.inv = 5; LOOPBACK.step(1); }
+    killPlayer(); LOOPBACK.step(1); out.lastTickFail = G.rewind && G.rewind.fail; LOOPBACK.step(130); out.loopAfter = G.st.loop; out.ghostsAfter = G.ghosts.length;
+    // #2 anchor killed in the same tick as death is revived on retry; #6 shards restored
+    LOOPBACK.start('volt', { seed: 3 }); LOOPBACK.step(160); while (G.st.tick < 200) { G.player.inv = 5; LOOPBACK.step(1); }
+    const shards0 = G.run.shards; G.run.shards += 40; G.st.anchor.dead = true;
+    killPlayer(); LOOPBACK.step(1); LOOPBACK.step(130);
+    out.anchorDeadAfterRetry = G.st.anchor.dead; out.shardsRestored = G.run.shards === shards0;
+    while (G.st.tick < 200) { G.player.inv = 5; LOOPBACK.step(1); } out.anchorActive = G.st.anchor.active;
+    // #3 slow-mo must not leak into a new run
+    G.timeScale = 0.25; LOOPBACK.toTitle(); LOOPBACK.start('volt', { seed: 3 }); out.timeScale = G.timeScale;
+    return out;
+  });
+  check('regression: last-tick death with no charges ends run', reg.lastTickNoCharge === 'dying', JSON.stringify(reg));
+  check('regression: last-tick death with charges is a retry', reg.lastTickFail === true && reg.loopAfter === 0 && reg.ghostsAfter === 0, JSON.stringify(reg));
+  check('regression: anchor revived on retry (no softlock)', reg.anchorDeadAfterRetry === false && reg.anchorActive === true, JSON.stringify(reg));
+  check('regression: shards from failed loop are undone', reg.shardsRestored, JSON.stringify(reg));
+  check('regression: slow-mo does not leak into new run', reg.timeScale === 1, JSON.stringify(reg));
+
   // ---- replay determinism of swarm layers (same seed => same schedule)
   const sameLayers = await ev(() => {
     LOOPBACK.start('bulwark', { seed: 777 }); const a = JSON.stringify(LOOPBACK.G.st.layers);
