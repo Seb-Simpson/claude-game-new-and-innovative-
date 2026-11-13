@@ -7,6 +7,8 @@ becomes an **Echo**: a ghost that replays every step, shot and ability you made,
 alongside you. Stack up to eight versions of yourself to destroy each sector's Anchor.
 
 ## Play
+**Online:** https://seb-simpson.github.io/claude-game-new-and-innovative-/ (GitHub Pages, from `main`)
+
 Open `index.html` in any modern browser: desktop (Chrome, Edge, Firefox, Safari) or phone/tablet in landscape. No install, no build.
 
 | Action | Keys |
