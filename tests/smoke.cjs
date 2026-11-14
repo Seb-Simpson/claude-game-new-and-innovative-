@@ -325,6 +325,9 @@ function check(name, cond, detail = '') {
   await mp.evaluate(() => { LOOPBACK.G.player.inv = 99; LOOPBACK.step(30); });
   const mx1 = await mp.evaluate(() => LOOPBACK.G.player.x);
   check('mobile: left stick moves player', mx1 > mx0 + 50, `${mx0} -> ${mx1}`);
+  await mp.setViewportSize({ width: 844, height: 330 }); await mp.waitForTimeout(120); // Safari with toolbars showing
+  check('mobile: HUD moves into the side bars on a wide phone', await mp.evaluate(() => { LOOPBACK.updateHUD(); const b = document.querySelector('#hud .boss').getBoundingClientRect(), side = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--side')); return document.body.classList.contains('side') && b.right <= side + 1; }));
+  await mp.setViewportSize({ width: 844, height: 390 }); await mp.waitForTimeout(120);
   await pdown(2, 600, 200);
   const shots0 = await mp.evaluate(() => { LOOPBACK.G.pb.length = 0; LOOPBACK.step(20); return LOOPBACK.G.pb.length; });
   check('mobile: holding right side fires (auto-target)', shots0 > 0, `bullets=${shots0}`);
@@ -337,6 +340,7 @@ function check(name, cond, detail = '') {
   await mp.tap('#t-ab');
   check('mobile: ability button triggers ability', await mp.evaluate(() => { LOOPBACK.step(2); return LOOPBACK.G.player.acd > 0; }));
   check('mobile: sticks released after lift', await mp.evaluate(() => !LOOPBACK.Touch.move && !LOOPBACK.Touch.aim));
+  check('mobile: idle sticks are hidden once the tutorial hint is over', await mp.evaluate(() => { LOOPBACK.G.st.tick = 700; LOOPBACK.updateHUD(); return document.getElementById('st-l').classList.contains('away'); }));
   await mp.evaluate(() => LOOPBACK.updateHUD());
   await mp.tap('#t-pause');
   check('mobile: pause button pauses', await mp.isVisible('#scr-pause'));
@@ -345,7 +349,7 @@ function check(name, cond, detail = '') {
   check('mobile: resume via tap', !(await mp.isVisible('#scr-pause')) && await mp.evaluate(() => !LOOPBACK.G.paused));
   // upgrade screen fits on phone
   await mp.evaluate(() => { const G = LOOPBACK.G; for (let i = 0; i < 400 && G.mode === 'play'; i++) { const a = G.st.anchor; if (a.active && !a.dead) { a.hp = 0.5; G.pb.push({ x: a.x, y: a.y, vx: 0, vy: 0, r: 5, dmg: 5, life: 1, pierce: 0, bounce: 0, ghost: false, homing: 0, chain: 0, hits: null, color: '#fff' }); } G.player.inv = 5; LOOPBACK.step(1); } });
-  check('mobile: upgrade cards visible', await mp.evaluate(() => { const c = [...document.querySelectorAll('#up-cards .card')]; return c.length === 3 && c.every(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.right <= innerWidth + 1; }); }));
+  check('mobile: upgrade cards visible', await mp.evaluate(() => { const c = [...document.querySelectorAll('#up-cards .card')]; return c.length === 3 && c.every(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.right <= innerWidth + 1; }); }), await mp.evaluate(() => JSON.stringify({ mode: LOOPBACK.G.mode, h: innerHeight, cards: [...document.querySelectorAll('#up-cards .card')].map(el => { const r = el.getBoundingClientRect(); return [r.top | 0, r.bottom | 0]; }) })));
   if (SHOTS) await mp.screenshot({ path: path.join(shotDir, 'm5-upgrade.png') });
   await mp.evaluate(() => LOOPBACK.chooseUpgrade(0));
   await mp.evaluate(() => LOOPBACK.step(170));
